@@ -1,6 +1,6 @@
 package com.neganote.bankapi.exception;
 
-import com.example.todoapi.dto.ErrorResponse;
+import com.neganote.bankapi.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.HashMap;
