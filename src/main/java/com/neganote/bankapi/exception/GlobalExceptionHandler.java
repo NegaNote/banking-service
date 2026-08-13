@@ -31,9 +31,14 @@ public class GlobalExceptionHandler {
     }
 
     // 400 - business-rule violations (e.g. duplicate username)
-    @ExceptionHandler(IllegalArgumentException.class)
+    @ExceptionHandler({
+        IllegalStateException.class,
+        IllegalArgumentException.class,
+        InsufficientFundsException.class,
+        InvalidTransferException.class
+    })
     public ResponseEntity<ErrorResponse> handleIllegalArgument(
-            IllegalArgumentException ex, HttpServletRequest request) {
+            Exception ex, HttpServletRequest request) {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request, null);
     }
 

@@ -1,9 +1,8 @@
 package com.neganote.bankapi.dto;
 
-import lombok.*;
-
 import java.time.LocalDateTime;
 import java.util.Map;
+import lombok.*;
 
 @Getter
 @Setter
