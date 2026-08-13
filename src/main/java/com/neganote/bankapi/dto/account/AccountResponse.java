@@ -10,6 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class AccountResponse {
+    private Long id;
     private String accountNumber;
     private BigDecimal balance;
     private String status;
