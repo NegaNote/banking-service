@@ -64,17 +64,17 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public AccountResponse findMyAccount(Long id, String username) {
+    public AccountResponse findMyAccount(String accountNumber, String username) {
         return AccountMapper.toAccountResponse(
                 accountRepository
-                        .findByIdAndOwner_Username(id, username)
+                        .findByAccountNumberAndOwner_Username(accountNumber, username)
                         .orElseThrow(() -> new ResourceNotFoundException("Account not found")));
     }
 
-    public AccountResponse deposit(Long accountId, DepositRequest request, String username) {
+    public AccountResponse deposit(String accountNumber, DepositRequest request, String username) {
         Account account =
                 accountRepository
-                        .findByIdAndOwner_Username(accountId, username)
+                        .findByAccountNumberAndOwner_Username(accountNumber, username)
                         .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
         BankTransaction transaction =
@@ -91,10 +91,11 @@ public class AccountService {
         return AccountMapper.toAccountResponse(accountRepository.save(account));
     }
 
-    public AccountResponse withdraw(Long accountId, WithdrawalRequest request, String username) {
+    public AccountResponse withdraw(
+            String accountNumber, WithdrawalRequest request, String username) {
         Account account =
                 accountRepository
-                        .findByIdAndOwner_Username(accountId, username)
+                        .findByAccountNumberAndOwner_Username(accountNumber, username)
                         .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
         if (account.getStatus() != AccountStatus.ACTIVE) {
@@ -119,10 +120,11 @@ public class AccountService {
         return AccountMapper.toAccountResponse(accountRepository.save(account));
     }
 
-    public AccountResponse transfer(Long fromAccountId, TransferRequest request, String username) {
+    public AccountResponse transfer(
+            String fromAccountNumber, TransferRequest request, String username) {
         Account sourceAccount =
                 accountRepository
-                        .findByIdAndOwner_Username(fromAccountId, username)
+                        .findByAccountNumberAndOwner_Username(fromAccountNumber, username)
                         .orElseThrow(
                                 () -> new ResourceNotFoundException("Source account not found"));
 

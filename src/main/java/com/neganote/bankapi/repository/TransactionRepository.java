@@ -11,8 +11,8 @@ public interface TransactionRepository extends JpaRepository<BankTransaction, Lo
     @Query(
 """
     SELECT t FROM BankTransaction t
-    WHERE t.fromAccount.id = :accountId OR t.toAccount.id = :accountId
+    WHERE t.fromAccount.accountNumber = :accountNumber OR t.toAccount.accountNumber = :accountNumber
     ORDER BY t.occurredAt DESC
 """)
-    List<BankTransaction> findHistoryForAccount(@Param("accountId") Long accountId);
+    List<BankTransaction> findHistoryForAccount(@Param("accountNumber") String accountNumber);
 }
