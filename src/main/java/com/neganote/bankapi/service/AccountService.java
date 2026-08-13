@@ -28,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AccountService {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
-    private TransactionRepository transactionRepository;
+    private final TransactionRepository transactionRepository;
 
     public static Random RNG_SOURCE = new Random();
 
