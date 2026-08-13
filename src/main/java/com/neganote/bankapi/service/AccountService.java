@@ -1,9 +1,6 @@
 package com.neganote.bankapi.service;
 
-import com.neganote.bankapi.dto.account.AccountResponse;
-import com.neganote.bankapi.dto.account.DepositRequest;
-import com.neganote.bankapi.dto.account.TransferRequest;
-import com.neganote.bankapi.dto.account.WithdrawalRequest;
+import com.neganote.bankapi.dto.account.*;
 import com.neganote.bankapi.entity.Account;
 import com.neganote.bankapi.entity.AccountStatus;
 import com.neganote.bankapi.entity.BankTransaction;
@@ -32,7 +29,7 @@ public class AccountService {
 
     public static Random RNG_SOURCE = new Random();
 
-    public AccountResponse createAccount(String username) {
+    public AccountResponse createAccount(String username, OpenAccountRequest openAccountRequest) {
         String newAccountNumber = generateAccountNumber();
         while (accountRepository.existsByAccountNumber(newAccountNumber)) {
             newAccountNumber = generateAccountNumber();
