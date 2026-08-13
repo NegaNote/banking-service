@@ -34,7 +34,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
         IllegalStateException.class,
         IllegalArgumentException.class,
-        InsufficientFundsException.class,
         InvalidTransferException.class
     })
     public ResponseEntity<ErrorResponse> handleIllegalArgument(
@@ -60,6 +59,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNotFound(
             ResourceNotFoundException ex, HttpServletRequest request) {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), request, null);
+    }
+
+    @ExceptionHandler(InsufficientFundsException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientFunds(
+            InsufficientFundsException ex, HttpServletRequest request) {
+        return build(HttpStatus.UNPROCESSABLE_CONTENT, ex.getMessage(), request, null);
     }
 
     // 500 - last resort
