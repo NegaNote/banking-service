@@ -2,15 +2,13 @@ package com.neganote.bankapi.dto.transaction;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
 @Getter
+@Builder
 public class TransactionResponse {
     private Long id;
     private String type;
