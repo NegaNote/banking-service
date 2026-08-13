@@ -144,7 +144,7 @@ public class AccountService {
             throw new IllegalStateException("Destination account not active");
         }
 
-        if (destAccount.getId() == sourceAccount.getId()) {
+        if (destAccount.getId().equals(sourceAccount.getId())) {
             throw new InvalidTransferException("Cannot transfer to the same account");
         }
 
