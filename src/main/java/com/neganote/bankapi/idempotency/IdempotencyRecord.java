@@ -1,5 +1,6 @@
-package com.neganote.bankapi.entity;
+package com.neganote.bankapi.idempotency;
 
+import com.neganote.bankapi.entity.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;

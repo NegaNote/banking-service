@@ -1,4 +1,4 @@
-package com.neganote.bankapi.exception;
+package com.neganote.bankapi.idempotency;
 
 public class IdempotencyConflictException extends RuntimeException {
     public IdempotencyConflictException(String message) {

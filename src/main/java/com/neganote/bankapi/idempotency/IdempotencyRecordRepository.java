@@ -1,6 +1,5 @@
-package com.neganote.bankapi.repository;
+package com.neganote.bankapi.idempotency;
 
-import com.neganote.bankapi.entity.IdempotencyRecord;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 

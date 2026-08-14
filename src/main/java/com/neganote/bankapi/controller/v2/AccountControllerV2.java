@@ -2,10 +2,10 @@ package com.neganote.bankapi.controller.v2;
 
 import com.neganote.bankapi.dto.account.*;
 import com.neganote.bankapi.dto.transaction.TransactionResponse;
-import com.neganote.bankapi.entity.IdempotencyRecord;
 import com.neganote.bankapi.entity.User;
+import com.neganote.bankapi.idempotency.IdempotencyRecord;
+import com.neganote.bankapi.idempotency.IdempotencyService;
 import com.neganote.bankapi.service.AccountService;
-import com.neganote.bankapi.service.IdempotencyService;
 import com.neganote.bankapi.service.TransactionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
