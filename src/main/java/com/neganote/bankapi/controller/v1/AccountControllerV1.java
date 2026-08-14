@@ -1,4 +1,4 @@
-package com.neganote.bankapi.controller;
+package com.neganote.bankapi.controller.v1;
 
 import com.neganote.bankapi.dto.account.*;
 import com.neganote.bankapi.dto.transaction.TransactionResponse;
@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/accounts")
-public class AccountController {
+@RequestMapping("/api/v1/accounts")
+public class AccountControllerV1 {
     private final AccountService accountService;
     private final TransactionService transactionService;
 
