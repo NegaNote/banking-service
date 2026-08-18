@@ -21,6 +21,10 @@ RUN java -Djarmode=layertools -jar app.jar extract
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy each layer in increasing order of change frequency.
 # Docker can cache early layers when only application code changes.
 COPY --from=extractor /app/dependencies/ ./
