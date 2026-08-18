@@ -22,9 +22,8 @@ public class Account {
     @Column(name = "account_number", nullable = false, length = 20)
     private String accountNumber;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private User owner;
+    @Column(name = "owner_id", nullable = false)
+    private Long ownerId;
 
     @Column(nullable = false, precision = 14, scale = 2)
     private BigDecimal balance;

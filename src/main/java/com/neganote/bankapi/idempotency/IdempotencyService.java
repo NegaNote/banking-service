@@ -1,6 +1,5 @@
 package com.neganote.bankapi.idempotency;
 
-import com.neganote.bankapi.entity.User;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.Base64;
@@ -25,10 +24,10 @@ public class IdempotencyService {
      */
     @Transactional(readOnly = true)
     public Optional<IdempotencyRecord> findExisting(
-            String key, User user, String path, Object requestBody) {
+            String key, Long userId, String path, Object requestBody) {
         var hash = hashBody(requestBody);
         Optional<IdempotencyRecord> recordOpt =
-                repository.findByIdempotencyKeyAndUserIdAndRequestPath(key, user.getId(), path);
+                repository.findByIdempotencyKeyAndUserIdAndRequestPath(key, userId, path);
         if (recordOpt.isPresent()) {
             var idempotencyRecord = recordOpt.get();
             if (!idempotencyRecord.getRequestHash().equals(hash)) {
@@ -49,7 +48,7 @@ public class IdempotencyService {
      */
     public void createRecord(
             String key,
-            User user,
+            Long userId,
             String path,
             Object requestBody,
             int responseStatus,
@@ -57,7 +56,7 @@ public class IdempotencyService {
         IdempotencyRecord idempotencyRecord =
                 IdempotencyRecord.builder()
                         .idempotencyKey(key)
-                        .user(user)
+                        .userId(userId)
                         .requestPath(path)
                         .requestHash(hashBody(requestBody))
                         .responseStatus(responseStatus)

@@ -9,6 +9,5 @@ create table idempotency_records (
                                      request_path varchar(255) not null,
                                      response_body tinytext not null,
                                      primary key (id),
-                                     foreign key (user_id) references users (id),
                                      unique (idempotency_key, user_id)
 ) engine=InnoDB DEFAULT CHARSET=utf8mb4;

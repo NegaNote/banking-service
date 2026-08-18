@@ -7,6 +7,5 @@ create table accounts (
                           account_number varchar(20) not null,
                           status enum ('ACTIVE','CLOSED','FROZEN') not null,
                           primary key (id),
-                          unique (account_number),
-                          foreign key (owner_id) references users (id)
+                          unique (account_number)
 ) engine=InnoDB DEFAULT CHARSET=utf8mb4;

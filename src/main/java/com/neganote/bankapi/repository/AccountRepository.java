@@ -6,11 +6,11 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AccountRepository extends JpaRepository<Account, Long> {
-    List<Account> findByOwner_UsernameOrderByCreatedAtDesc(String username);
+    List<Account> findByOwnerIdOrderByCreatedAtDesc(Long ownerId);
 
-    Optional<Account> findByAccountNumberAndOwner_Username(String accountNumber, String username);
+    Optional<Account> findByAccountNumberAndOwnerId(String accountNumber, Long ownerId);
 
-    boolean existsByAccountNumberAndOwner_Username(String accountNumber, String username);
+    boolean existsByAccountNumberAndOwnerId(String accountNumber, Long ownerId);
 
     Optional<Account> findByAccountNumber(String accountNumber);
 

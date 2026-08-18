@@ -11,7 +11,6 @@ import com.neganote.bankapi.exception.ResourceNotFoundException;
 import com.neganote.bankapi.mapper.AccountMapper;
 import com.neganote.bankapi.repository.AccountRepository;
 import com.neganote.bankapi.repository.TransactionRepository;
-import com.neganote.bankapi.repository.UserRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Random;
@@ -24,12 +23,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class AccountService {
     private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
 
     public static Random RNG_SOURCE = new Random();
 
-    public AccountResponse createAccount(String username, OpenAccountRequest openAccountRequest) {
+    public AccountResponse createAccount(Long userId, OpenAccountRequest openAccountRequest) {
         String newAccountNumber = generateAccountNumber();
         while (accountRepository.existsByAccountNumber(newAccountNumber)) {
             newAccountNumber = generateAccountNumber();
@@ -39,13 +37,7 @@ public class AccountService {
                         .accountNumber(newAccountNumber)
                         .balance(new BigDecimal("0.00"))
                         .status(AccountStatus.ACTIVE)
-                        .owner(
-                                userRepository
-                                        .findByUsername(username)
-                                        .orElseThrow(
-                                                () ->
-                                                        new ResourceNotFoundException(
-                                                                "User not found")))
+                        .ownerId(userId)
                         .build();
 
         accountRepository.save(newAccount);
@@ -54,24 +46,24 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public List<AccountResponse> findMyAccounts(String username) {
-        return accountRepository.findByOwner_UsernameOrderByCreatedAtDesc(username).stream()
+    public List<AccountResponse> findMyAccounts(Long userId) {
+        return accountRepository.findByOwnerIdOrderByCreatedAtDesc(userId).stream()
                 .map(AccountMapper::toAccountResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public AccountResponse findMyAccount(String accountNumber, String username) {
+    public AccountResponse findMyAccount(String accountNumber, Long userId) {
         return AccountMapper.toAccountResponse(
                 accountRepository
-                        .findByAccountNumberAndOwner_Username(accountNumber, username)
+                        .findByAccountNumberAndOwnerId(accountNumber, userId)
                         .orElseThrow(() -> new ResourceNotFoundException("Account not found")));
     }
 
-    public AccountResponse deposit(String accountNumber, DepositRequest request, String username) {
+    public AccountResponse deposit(String accountNumber, DepositRequest request, Long userId) {
         Account account =
                 accountRepository
-                        .findByAccountNumberAndOwner_Username(accountNumber, username)
+                        .findByAccountNumberAndOwnerId(accountNumber, userId)
                         .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
         BankTransaction transaction =
@@ -88,11 +80,10 @@ public class AccountService {
         return AccountMapper.toAccountResponse(accountRepository.save(account));
     }
 
-    public AccountResponse withdraw(
-            String accountNumber, WithdrawalRequest request, String username) {
+    public AccountResponse withdraw(String accountNumber, WithdrawalRequest request, Long userId) {
         Account account =
                 accountRepository
-                        .findByAccountNumberAndOwner_Username(accountNumber, username)
+                        .findByAccountNumberAndOwnerId(accountNumber, userId)
                         .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
         if (account.getStatus() != AccountStatus.ACTIVE) {
@@ -118,10 +109,10 @@ public class AccountService {
     }
 
     public AccountResponse transfer(
-            String fromAccountNumber, TransferRequest request, String username) {
+            String fromAccountNumber, TransferRequest request, Long userId) {
         Account sourceAccount =
                 accountRepository
-                        .findByAccountNumberAndOwner_Username(fromAccountNumber, username)
+                        .findByAccountNumberAndOwnerId(fromAccountNumber, userId)
                         .orElseThrow(
                                 () -> new ResourceNotFoundException("Source account not found"));
 

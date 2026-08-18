@@ -15,8 +15,8 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
 
-    public List<TransactionResponse> findHistoryForAccount(String accountNumber, String username) {
-        if (!accountRepository.existsByAccountNumberAndOwner_Username(accountNumber, username)) {
+    public List<TransactionResponse> findHistoryForAccount(String accountNumber, Long ownerId) {
+        if (!accountRepository.existsByAccountNumberAndOwnerId(accountNumber, ownerId)) {
             throw new ResourceNotFoundException("Account not found");
         }
 

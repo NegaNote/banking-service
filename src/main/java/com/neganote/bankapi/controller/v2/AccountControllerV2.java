@@ -2,7 +2,6 @@ package com.neganote.bankapi.controller.v2;
 
 import com.neganote.bankapi.dto.account.*;
 import com.neganote.bankapi.dto.transaction.TransactionResponse;
-import com.neganote.bankapi.entity.User;
 import com.neganote.bankapi.idempotency.IdempotencyRecord;
 import com.neganote.bankapi.idempotency.IdempotencyService;
 import com.neganote.bankapi.service.AccountService;
@@ -14,7 +13,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -28,33 +27,37 @@ public class AccountControllerV2 {
     private final JsonMapper jsonMapper;
 
     @GetMapping
-    public List<AccountResponse> getAccounts(@AuthenticationPrincipal UserDetails userDetails) {
-        return accountService.findMyAccounts(userDetails.getUsername());
+    public List<AccountResponse> getAccounts(@AuthenticationPrincipal Jwt jwt) {
+        Long userId = Long.parseLong(jwt.getSubject());
+        return accountService.findMyAccounts(userId);
     }
 
     @PostMapping
     public AccountResponse openAccount(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody OpenAccountRequest openAccountRequest) {
-        return accountService.createAccount(userDetails.getUsername(), openAccountRequest);
+        Long userId = Long.parseLong(jwt.getSubject());
+        return accountService.createAccount(userId, openAccountRequest);
     }
 
     @GetMapping("/{accountNumber}")
     public AccountResponse getAccountDetails(
-            @AuthenticationPrincipal UserDetails userDetails, @PathVariable String accountNumber) {
-        return accountService.findMyAccount(accountNumber, userDetails.getUsername());
+            @AuthenticationPrincipal Jwt jwt, @PathVariable String accountNumber) {
+        Long userId = Long.parseLong(jwt.getSubject());
+        return accountService.findMyAccount(accountNumber, userId);
     }
 
     @PostMapping("/{accountNumber}/deposits")
     public ResponseEntity<AccountResponse> deposit(
-            @AuthenticationPrincipal User user,
+            @AuthenticationPrincipal Jwt jwt,
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @PathVariable String accountNumber,
             @Valid @RequestBody DepositRequest depositRequest,
             HttpServletRequest httpRequest) {
+        Long userId = Long.parseLong(jwt.getSubject());
         Optional<IdempotencyRecord> existing =
                 idempotencyService.findExisting(
-                        idempotencyKey, user, httpRequest.getRequestURI(), depositRequest);
+                        idempotencyKey, userId, httpRequest.getRequestURI(), depositRequest);
 
         if (existing.isPresent()) {
             // Replay the cached response, same status, same body
@@ -66,26 +69,26 @@ public class AccountControllerV2 {
         }
 
         // 2. Perform the real operation
-        AccountResponse response =
-                accountService.deposit(accountNumber, depositRequest, user.getUsername());
+        AccountResponse response = accountService.deposit(accountNumber, depositRequest, userId);
 
         // 3. Record the result
         idempotencyService.createRecord(
-                idempotencyKey, user, httpRequest.getRequestURI(), depositRequest, 200, response);
+                idempotencyKey, userId, httpRequest.getRequestURI(), depositRequest, 200, response);
 
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{accountNumber}/withdrawals")
     public ResponseEntity<AccountResponse> withdraw(
-            @AuthenticationPrincipal User user,
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable String accountNumber,
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @Valid @RequestBody WithdrawalRequest withdrawalRequest,
             HttpServletRequest httpRequest) {
+        Long userId = Long.parseLong(jwt.getSubject());
         Optional<IdempotencyRecord> existing =
                 idempotencyService.findExisting(
-                        idempotencyKey, user, httpRequest.getRequestURI(), withdrawalRequest);
+                        idempotencyKey, userId, httpRequest.getRequestURI(), withdrawalRequest);
 
         if (existing.isPresent()) {
             // Replay the cached response, same status, same body
@@ -98,12 +101,12 @@ public class AccountControllerV2 {
 
         // 2. Perform the real operation
         AccountResponse response =
-                accountService.withdraw(accountNumber, withdrawalRequest, user.getUsername());
+                accountService.withdraw(accountNumber, withdrawalRequest, userId);
 
         // 3. Record the result
         idempotencyService.createRecord(
                 idempotencyKey,
-                user,
+                userId,
                 httpRequest.getRequestURI(),
                 withdrawalRequest,
                 200,
@@ -114,14 +117,15 @@ public class AccountControllerV2 {
 
     @PostMapping("/{accountNumber}/transfers")
     public ResponseEntity<AccountResponse> transfer(
-            @AuthenticationPrincipal User user,
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable String accountNumber,
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @Valid @RequestBody TransferRequest transferRequest,
             HttpServletRequest httpRequest) {
+        Long userId = Long.parseLong(jwt.getSubject());
         Optional<IdempotencyRecord> existing =
                 idempotencyService.findExisting(
-                        idempotencyKey, user, httpRequest.getRequestURI(), transferRequest);
+                        idempotencyKey, userId, httpRequest.getRequestURI(), transferRequest);
 
         if (existing.isPresent()) {
             // Replay the cached response, same status, same body
@@ -133,19 +137,24 @@ public class AccountControllerV2 {
         }
 
         // 2. Perform the real operation
-        AccountResponse response =
-                accountService.transfer(accountNumber, transferRequest, user.getUsername());
+        AccountResponse response = accountService.transfer(accountNumber, transferRequest, userId);
 
         // 3. Record the result
         idempotencyService.createRecord(
-                idempotencyKey, user, httpRequest.getRequestURI(), transferRequest, 200, response);
+                idempotencyKey,
+                userId,
+                httpRequest.getRequestURI(),
+                transferRequest,
+                200,
+                response);
 
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{accountNumber}/transactions")
     public List<TransactionResponse> getTransactionHistory(
-            @AuthenticationPrincipal UserDetails userDetails, @PathVariable String accountNumber) {
-        return transactionService.findHistoryForAccount(accountNumber, userDetails.getUsername());
+            @AuthenticationPrincipal Jwt jwt, @PathVariable String accountNumber) {
+        Long userId = Long.parseLong(jwt.getSubject());
+        return transactionService.findHistoryForAccount(accountNumber, userId);
     }
 }

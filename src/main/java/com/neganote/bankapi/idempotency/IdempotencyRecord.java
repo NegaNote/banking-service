@@ -1,6 +1,5 @@
 package com.neganote.bankapi.idempotency;
 
-import com.neganote.bankapi.entity.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.*;
@@ -24,9 +23,8 @@ public class IdempotencyRecord {
     @Column(name = "idempotency_key", nullable = false, length = 100)
     private String idempotencyKey;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     /** Hash of the request body, base64-encoded SHA-256. Used to detect key reuse with different payload. */
     @Column(name = "request_hash", nullable = false, length = 100)
