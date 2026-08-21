@@ -1,7 +1,10 @@
 package com.neganote.bankapi.controller.v2;
 
+import com.neganote.bankapi.audit.AuditEvent;
+import com.neganote.bankapi.audit.AuditService;
 import com.neganote.bankapi.dto.account.*;
 import com.neganote.bankapi.dto.transaction.TransactionResponse;
+import com.neganote.bankapi.exception.InsufficientFundsException;
 import com.neganote.bankapi.idempotency.IdempotencyRecord;
 import com.neganote.bankapi.idempotency.IdempotencyService;
 import com.neganote.bankapi.service.AccountService;
@@ -25,6 +28,7 @@ public class AccountControllerV2 {
     private final TransactionService transactionService;
     private final IdempotencyService idempotencyService;
     private final JsonMapper jsonMapper;
+    private final AuditService auditService;
 
     @GetMapping
     public List<AccountResponse> getAccounts(@AuthenticationPrincipal Jwt jwt) {
@@ -55,6 +59,8 @@ public class AccountControllerV2 {
             @Valid @RequestBody DepositRequest depositRequest,
             HttpServletRequest httpRequest) {
         Long userId = Long.parseLong(jwt.getSubject());
+        String ip = clientIp(httpRequest);
+        String ua = httpRequest.getHeader("User-Agent");
         Optional<IdempotencyRecord> existing =
                 idempotencyService.findExisting(
                         idempotencyKey, userId, httpRequest.getRequestURI(), depositRequest);
@@ -68,14 +74,60 @@ public class AccountControllerV2 {
             return ResponseEntity.status(idempotencyRecord.getResponseStatus()).body(cached);
         }
 
-        // 2. Perform the real operation
-        AccountResponse response = accountService.deposit(accountNumber, depositRequest, userId);
+        try {
 
-        // 3. Record the result
-        idempotencyService.createRecord(
-                idempotencyKey, userId, httpRequest.getRequestURI(), depositRequest, 200, response);
+            // 2. Perform the real operation
+            AccountResponse response =
+                    accountService.deposit(accountNumber, depositRequest, userId);
 
-        return ResponseEntity.ok(response);
+            auditService.record(
+                    AuditEvent.builder()
+                            .eventType("DEPOSIT")
+                            .userId(userId)
+                            .accountNumber(accountNumber)
+                            .counterpartyAccountNumber(null)
+                            .amount(depositRequest.getAmount())
+                            .result("SUCCESS")
+                            .ipAddress(ip)
+                            .userAgent(ua)
+                            .detail("To: " + accountNumber)
+                            .build());
+
+            // 3. Record the result
+            idempotencyService.createRecord(
+                    idempotencyKey,
+                    userId,
+                    httpRequest.getRequestURI(),
+                    depositRequest,
+                    200,
+                    response);
+
+            return ResponseEntity.ok(response);
+
+        } catch (InsufficientFundsException e) {
+            auditService.record(
+                    AuditEvent.builder()
+                            .eventType("DEPOSIT")
+                            .userId(userId)
+                            .accountNumber(accountNumber)
+                            .counterpartyAccountNumber(null)
+                            .amount(depositRequest.getAmount())
+                            .result("DECLINED")
+                            .ipAddress(ip)
+                            .userAgent(ua)
+                            .detail(e.getMessage())
+                            .build());
+            throw e;
+        }
+    }
+
+    private String clientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            // X-Forwarded-For is a comma-separated chain; the leftmost is the client
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
     @PostMapping("/{accountNumber}/withdrawals")
@@ -86,6 +138,8 @@ public class AccountControllerV2 {
             @Valid @RequestBody WithdrawalRequest withdrawalRequest,
             HttpServletRequest httpRequest) {
         Long userId = Long.parseLong(jwt.getSubject());
+        String ip = clientIp(httpRequest);
+        String ua = httpRequest.getHeader("User-Agent");
         Optional<IdempotencyRecord> existing =
                 idempotencyService.findExisting(
                         idempotencyKey, userId, httpRequest.getRequestURI(), withdrawalRequest);
@@ -99,20 +153,47 @@ public class AccountControllerV2 {
             return ResponseEntity.status(idempotencyRecord.getResponseStatus()).body(cached);
         }
 
-        // 2. Perform the real operation
-        AccountResponse response =
-                accountService.withdraw(accountNumber, withdrawalRequest, userId);
+        try {
+            AccountResponse response =
+                    accountService.withdraw(accountNumber, withdrawalRequest, userId);
 
-        // 3. Record the result
-        idempotencyService.createRecord(
-                idempotencyKey,
-                userId,
-                httpRequest.getRequestURI(),
-                withdrawalRequest,
-                200,
-                response);
+            auditService.record(
+                    AuditEvent.builder()
+                            .eventType("WITHDRAWAL")
+                            .userId(userId)
+                            .accountNumber(accountNumber)
+                            .counterpartyAccountNumber(null)
+                            .amount(withdrawalRequest.getAmount())
+                            .result("SUCCESS")
+                            .ipAddress(ip)
+                            .userAgent(ua)
+                            .detail("From: " + accountNumber)
+                            .build());
 
-        return ResponseEntity.ok(response);
+            idempotencyService.createRecord(
+                    idempotencyKey,
+                    userId,
+                    httpRequest.getRequestURI(),
+                    withdrawalRequest,
+                    200,
+                    response);
+
+            return ResponseEntity.ok(response);
+        } catch (InsufficientFundsException e) {
+            auditService.record(
+                    AuditEvent.builder()
+                            .eventType("WITHDRAWAL")
+                            .userId(userId)
+                            .accountNumber(accountNumber)
+                            .counterpartyAccountNumber(null)
+                            .amount(withdrawalRequest.getAmount())
+                            .result("DECLINED")
+                            .ipAddress(ip)
+                            .userAgent(ua)
+                            .detail(e.getMessage())
+                            .build());
+            throw e;
+        }
     }
 
     @PostMapping("/{accountNumber}/transfers")
@@ -123,6 +204,8 @@ public class AccountControllerV2 {
             @Valid @RequestBody TransferRequest transferRequest,
             HttpServletRequest httpRequest) {
         Long userId = Long.parseLong(jwt.getSubject());
+        String ip = clientIp(httpRequest);
+        String ua = httpRequest.getHeader("User-Agent");
         Optional<IdempotencyRecord> existing =
                 idempotencyService.findExisting(
                         idempotencyKey, userId, httpRequest.getRequestURI(), transferRequest);
@@ -135,20 +218,51 @@ public class AccountControllerV2 {
                             idempotencyRecord.getResponseBody(), AccountResponse.class);
             return ResponseEntity.status(idempotencyRecord.getResponseStatus()).body(cached);
         }
+        try {
+            AccountResponse response =
+                    accountService.transfer(accountNumber, transferRequest, userId);
 
-        // 2. Perform the real operation
-        AccountResponse response = accountService.transfer(accountNumber, transferRequest, userId);
+            auditService.record(
+                    AuditEvent.builder()
+                            .eventType("TRANSFER")
+                            .userId(userId)
+                            .accountNumber(accountNumber)
+                            .counterpartyAccountNumber(transferRequest.getToAccountNumber())
+                            .amount(transferRequest.getAmount())
+                            .result("SUCCESS")
+                            .ipAddress(ip)
+                            .userAgent(ua)
+                            .detail(
+                                    "From: "
+                                            + accountNumber
+                                            + " To: "
+                                            + transferRequest.getToAccountNumber())
+                            .build());
 
-        // 3. Record the result
-        idempotencyService.createRecord(
-                idempotencyKey,
-                userId,
-                httpRequest.getRequestURI(),
-                transferRequest,
-                200,
-                response);
+            idempotencyService.createRecord(
+                    idempotencyKey,
+                    userId,
+                    httpRequest.getRequestURI(),
+                    transferRequest,
+                    200,
+                    response);
 
-        return ResponseEntity.ok(response);
+            return ResponseEntity.ok(response);
+        } catch (InsufficientFundsException e) {
+            auditService.record(
+                    AuditEvent.builder()
+                            .eventType("TRANSFER")
+                            .userId(userId)
+                            .accountNumber(accountNumber)
+                            .counterpartyAccountNumber(transferRequest.getToAccountNumber())
+                            .amount(transferRequest.getAmount())
+                            .result("DECLINED")
+                            .ipAddress(ip)
+                            .userAgent(ua)
+                            .detail(e.getMessage())
+                            .build());
+            throw e;
+        }
     }
 
     @GetMapping("/{accountNumber}/transactions")

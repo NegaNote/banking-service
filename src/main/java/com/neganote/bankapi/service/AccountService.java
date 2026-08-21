@@ -14,6 +14,8 @@ import com.neganote.bankapi.repository.TransactionRepository;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Random;
+
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AccountService {
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final MeterRegistry meterRegistry;
 
     private static final Logger logger = LoggerFactory.getLogger(AccountService.class);
 
@@ -100,6 +103,8 @@ public class AccountService {
                 accountNumber,
                 account.getBalance());
 
+        meterRegistry.counter("bank.deposits.completed", "result", "success").increment();
+
         return AccountMapper.toAccountResponse(accountRepository.save(account));
     }
 
@@ -130,6 +135,7 @@ public class AccountService {
         if (account.getBalance().compareTo(request.getAmount()) < 0) {
             logger.warn(
                     "Insufficient funds for accountNumber={} and userId={}", accountNumber, userId);
+            meterRegistry.counter("bank.withdrawals.completed", "result", "declined").increment();
             throw new InsufficientFundsException("Account has insufficient funds");
         }
 
@@ -148,6 +154,7 @@ public class AccountService {
                 "Withdrawal successful. New balance for accountNumber={} is {}",
                 accountNumber,
                 account.getBalance());
+        meterRegistry.counter("bank.withdrawals.completed", "result", "success").increment();
 
         return AccountMapper.toAccountResponse(accountRepository.save(account));
     }
@@ -212,6 +219,8 @@ public class AccountService {
             logger.warn(
                     "Source account has insufficient funds for accountNumber={}",
                     fromAccountNumber);
+            meterRegistry.counter("bank.transfers.completed", "result", "declined").increment();
+
             throw new InsufficientFundsException("Source account has insufficient funds");
         }
 
@@ -241,6 +250,8 @@ public class AccountService {
                 sourceAccount.getBalance(),
                 request.getToAccountNumber(),
                 destAccount.getBalance());
+
+        meterRegistry.counter("bank.transfers.completed", "result", "success").increment();
 
         return AccountMapper.toAccountResponse(sourceAccount);
     }

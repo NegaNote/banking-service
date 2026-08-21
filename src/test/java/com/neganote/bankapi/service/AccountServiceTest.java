@@ -36,12 +36,13 @@ class AccountServiceTest {
 
     @Mock private AccountRepository accountRepository;
     @Mock private TransactionRepository transactionRepository;
+    private final io.micrometer.core.instrument.MeterRegistry meterRegistry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
 
     private AccountService accountService;
 
     @BeforeEach
     void setUp() {
-        accountService = new AccountService(accountRepository, transactionRepository);
+        accountService = new AccountService(accountRepository, transactionRepository, meterRegistry);
     }
 
     @Test

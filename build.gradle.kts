@@ -46,6 +46,7 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
     implementation("org.flywaydb:flyway-mysql:13.3.0")
     implementation("net.logstash.logback:logstash-logback-encoder:8.0")
+    implementation("io.micrometer:micrometer-registry-prometheus")
 }
 
 tasks.withType<Test> {

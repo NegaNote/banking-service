@@ -33,6 +33,15 @@ public class GeneralRequestContextFilter extends OncePerRequestFilter {
         MDC.put("requestId", requestId);
         response.setHeader("X-Request-Id", requestId);
 
+        String traceId = request.getHeader("X-Trace-Id");
+        if (traceId == null || traceId.isBlank()) {
+            traceId = request.getHeader("traceId");
+        }
+        if (traceId == null || traceId.isBlank()) {
+            traceId = requestId;
+        }
+        MDC.put("traceId", traceId);
+
         try {
             chain.doFilter(request, response);
         } finally {

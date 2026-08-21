@@ -13,7 +13,6 @@ import com.neganote.bankapi.repository.TransactionRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -27,8 +26,7 @@ class TransactionServiceTest {
 
     @Test
     void historyMapsTransactionsForAnOwnedAccount() {
-        Account account =
-                Account.builder().accountNumber("100000000001").ownerId(42L).build();
+        Account account = Account.builder().accountNumber("100000000001").ownerId(42L).build();
         BankTransaction transaction =
                 BankTransaction.builder()
                         .id(1L)
